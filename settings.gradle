@@ -1,0 +1,5 @@
+rootProject.name = 'brick-proxy'
+
+include 'shop'
+include 'proxy'
+include 'site'

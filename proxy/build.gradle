@@ -1,0 +1,4 @@
+
+dependencies {
+    testCompile 'org.codehaus.groovy:groovy-all:2.4.1'
+}
