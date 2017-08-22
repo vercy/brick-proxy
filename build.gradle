@@ -12,8 +12,5 @@ subprojects {
 
     dependencies {
         compile 'ch.qos.logback:logback-classic:1.2.3'
-
-        testCompile 'org.codehaus.groovy:groovy-all:2.4.12'
-        testCompile 'org.spockframework:spock-core:1.1-groovy-2.4'
     }
 }

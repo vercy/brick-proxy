@@ -9,6 +9,14 @@ class BrickPayload {
         this.length = length;
     }
 
+    public AnsiColor getColor() {
+        return color;
+    }
+
+    public int getLength() {
+        return length;
+    }
+
     static BrickPayload parse(String c, String l) {
         if(c == null || c.isEmpty())
             throw new IllegalArgumentException("The color cannot be empty");
