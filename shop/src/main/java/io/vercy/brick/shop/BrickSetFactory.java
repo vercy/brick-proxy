@@ -5,7 +5,7 @@ import java.util.Random;
 public class BrickSetFactory {
 
     private static final int ANSI_COLOR_LIMIT = 8;
-    private static final int BRICK_LENGTH_LIMIT = 24;
+    private static final int BRICK_LENGTH_LIMIT = 15;
     private static final int BRICK_SET_PIECE_COUNT_LIMIT = 8;
 
     private Random random = new Random();
@@ -14,8 +14,8 @@ public class BrickSetFactory {
         int pieceCount = nextBrickSetPieceCount();
         byte[] brickSet = new byte[pieceCount * 2];
         for(int i = 0; i < pieceCount; i++) {
-            brickSet[i] = (byte)nextColor();
-            brickSet[i + 1] = (byte)nextLength();
+            brickSet[i << 1] = (byte)nextColor();
+            brickSet[(i << 1) + 1] = (byte)nextLength();
         }
         return brickSet;
     }
@@ -29,6 +29,7 @@ public class BrickSetFactory {
     }
 
     private int nextLength() {
-        return random.nextInt(BRICK_LENGTH_LIMIT);
+        int length = random.nextInt(BRICK_LENGTH_LIMIT) + 1;
+        return length;
     }
 }

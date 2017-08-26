@@ -27,7 +27,7 @@ public class BrickRequestHandler implements HttpHandler {
             length = first(query, "length");
             BrickPayload brick = BrickPayload.parse(color, length);
 
-            log.info("{} > {} ...", String.format("%08X", requestId), brick);
+            log.trace("{} > {}", String.format("%08X", requestId), brick);
             waitForProcessingBrick(brick);
             exchange.getResponseSender().send("Brick Construction Site: received " + brick);
             log.info("{} > {}", String.format("%08X", requestId), brick.render());
