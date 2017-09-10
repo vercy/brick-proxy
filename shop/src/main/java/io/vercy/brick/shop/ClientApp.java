@@ -18,13 +18,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public class PublicBrickServiceClient {
+public class ClientApp {
 
     private static final String PUBLIC_BRICK_SERVICE_HOST = "localhost:8090";
     private static final long SEND_MILLIS_PER_BYTE = 100;
-    private static final Logger log = LoggerFactory.getLogger(PublicBrickServiceClient.class);
-    private static final int WORKER_COUNT = 4;
-    private static final int BRICK_SETS_TO_SEND = 100;
+    private static final Logger log = LoggerFactory.getLogger(ClientApp.class);
+    private static final int WORKER_COUNT = 100;
+    private static final int BRICK_SETS_TO_SEND = 4000;
 
     public static void main(String[] args) throws Exception {
         long start = System.currentTimeMillis();

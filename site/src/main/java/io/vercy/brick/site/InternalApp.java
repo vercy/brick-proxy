@@ -3,7 +3,7 @@ package io.vercy.brick.site;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 
-public class InternalBrickService {
+public class InternalApp {
 
     public static int INTERNAL_SVC_PORT = 8080;
 
