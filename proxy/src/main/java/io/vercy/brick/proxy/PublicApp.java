@@ -16,11 +16,11 @@ public class PublicApp {
 
     public static void main(String[] args) throws Exception {
         DeploymentInfo servletBuilder = Servlets.deployment()
-                .setClassLoader(NonBlockingServlet.class.getClassLoader())
+                .setClassLoader(PublicApp.class.getClassLoader())
                 .setContextPath("/brickset")
                 .setDeploymentName("blocking-brick-proxy.war")
                 .addServlets(
-                        Servlets.servlet("BlockingServlet", NonBlockingServlet.class)
+                        Servlets.servlet("BlockingServlet", AsyncNonBlockingServlet.class)
                                 .setAsyncSupported(true)
                                 .addInitParam("message", "Hello World")
                                 .addMapping("/*"));
@@ -35,5 +35,7 @@ public class PublicApp {
                 .setHandler(path)
                 .build();
         server.start();
+
+//        new InternalServiceAccess().sendNonBlocking(1, new BrickPayload(AnsiColor.CYAN, 1));
     }
 }

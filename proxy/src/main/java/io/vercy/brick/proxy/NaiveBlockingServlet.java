@@ -1,11 +1,12 @@
 package io.vercy.brick.proxy;
 
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
-import io.undertow.util.Headers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -14,22 +15,21 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
 
-public class BlockingBrickHandler implements HttpHandler {
+public class NaiveBlockingServlet extends HttpServlet {
     private static final String INTERNAL_BRICK_SERVICE_HOST = "localhost:8080";
 
-    private static final Logger log = LoggerFactory.getLogger(BlockingBrickHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(NaiveBlockingServlet.class);
     private static volatile int requestCounter = 0;
 
     @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         int requestId = requestCounter++;
-        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
+        resp.addHeader("Content-Type", "text/plain");
         int rawColor = -1;
         int rawLength = -1;
         int received = 0;
         try {
-            exchange.startBlocking();
-            InputStream in = exchange.getInputStream();
+            InputStream in = req.getInputStream();
             while(true) {
                 rawColor = in.read();
                 if(rawColor < 0)
@@ -45,17 +45,21 @@ public class BlockingBrickHandler implements HttpHandler {
                     log.warn("{} > Skipping invalid brick: {color: {}, length: {}} colorByte: {}, lengthByte: {}", String.format("%08X", requestId), bColor, bLength, rawColor, rawLength);
                     continue;
                 }
-                log.info("{} > Sending brick: {color: {}, length: {}}", String.format("%08X", requestId), bColor, bLength);
+                log.debug("{} > Sending brick: {color: {}, length: {}}", String.format("%08X", requestId), bColor, bLength);
 
                 sendBrick(requestId, bColor, bLength);
             }
-            exchange.getResponseSender().send("Public Brick Service received " + received + " bricks");
-            log.info("{} > Public Brick Service received {} bricks", String.format("%08X", requestId), received);
+
+            resp.getOutputStream().print("Public Brick Service received " + received + " bricks");
+            resp.setStatus(200);
+            log.debug("{} > Public Brick Service received {} bricks", String.format("%08X", requestId), received);
         } catch(RuntimeException e) {
-            exchange.setStatusCode(500);
+            resp.setStatus(500);
             String message = String.format("Could not process request: [color=%s, length=%s], cause: %s %s", rawColor, rawLength, e.getClass(), e.getMessage());
-            exchange.getResponseSender().send(message);
+            resp.getOutputStream().print(message);
             log.warn("{} > {}", String.format("%08X", requestId), message);
+        } finally {
+            resp.getOutputStream().close();
         }
     }
 
@@ -72,7 +76,7 @@ public class BlockingBrickHandler implements HttpHandler {
             if (responseCode != 200) {
                 log.warn("{} < Failed: {}, status: {}", String.format("%08X", requestId), url, responseCode);
             } else {
-                log.info("{} > {}", String.format("%08X", requestId), response);
+                log.debug("{} > {}", String.format("%08X", requestId), response);
             }
         } catch (ConnectException ce) {
             log.warn("{} Internal Service is not running: {}", String.format("%08X", requestId), ce.getMessage());

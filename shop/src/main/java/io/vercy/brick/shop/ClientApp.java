@@ -23,8 +23,8 @@ public class ClientApp {
     private static final String PUBLIC_BRICK_SERVICE_HOST = "localhost:8090";
     private static final long SEND_MILLIS_PER_BYTE = 100;
     private static final Logger log = LoggerFactory.getLogger(ClientApp.class);
-    private static final int WORKER_COUNT = 100;
-    private static final int BRICK_SETS_TO_SEND = 4000;
+    private static final int WORKER_COUNT = 1;
+    private static final int BRICK_SETS_TO_SEND = 5;
 
     public static void main(String[] args) throws Exception {
         long start = System.currentTimeMillis();
@@ -48,6 +48,7 @@ public class ClientApp {
         }
         long duration = System.currentTimeMillis() - start;
         log.info("Sent {} brick sets in {} seconds", BRICK_SETS_TO_SEND, String.format("%.2f", duration / 1000f));
+        executor.shutdown();
     }
 
     private static void sendBrickSet(byte[] bytes) {
@@ -66,11 +67,13 @@ public class ClientApp {
                 byte color = bytes[i];
                 log.info("< color: {}", color);
                 out.write('0' + color);
+                out.flush();
                 Thread.sleep(SEND_MILLIS_PER_BYTE);
 
                 byte length = bytes[i + 1];
                 log.info("< length: {}", length);
                 out.write('0' + length);
+                out.flush();
                 Thread.sleep(SEND_MILLIS_PER_BYTE);
             }
             out.close();

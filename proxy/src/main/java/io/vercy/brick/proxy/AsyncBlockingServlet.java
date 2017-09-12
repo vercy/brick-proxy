@@ -4,8 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.AsyncContext;
-import javax.servlet.AsyncEvent;
-import javax.servlet.AsyncListener;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -22,9 +20,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @WebServlet(asyncSupported = true)
-public class NonBlockingServlet extends HttpServlet {
+public class AsyncBlockingServlet extends HttpServlet {
     private static final String INTERNAL_BRICK_SERVICE_HOST = "localhost:8080";
-    private static final Logger log = LoggerFactory.getLogger(NonBlockingServlet.class);
+    private static final Logger log = LoggerFactory.getLogger(AsyncBlockingServlet.class);
     private static final ExecutorService executor = Executors.newCachedThreadPool();
     private static volatile int requestCounter = 0;
 
