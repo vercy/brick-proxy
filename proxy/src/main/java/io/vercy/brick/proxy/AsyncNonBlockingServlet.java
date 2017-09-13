@@ -56,7 +56,7 @@ public class AsyncNonBlockingServlet extends HttpServlet {
                                 continue;
 
                             processedBrickCount++;
-                            receiver.submit(() -> internalServiceAccess.sendBlocking(requestId, brick));
+                            receiver.submit(() -> internalServiceAccess.sendBlocking(brick));
                         }
                     }
 
