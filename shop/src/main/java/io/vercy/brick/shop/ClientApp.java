@@ -9,45 +9,72 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ClientApp {
 
-    private static final String PUBLIC_BRICK_SERVICE_HOST = "localhost:8090";
-    private static final long SEND_MILLIS_PER_BYTE = 100;
-    private static final Logger log = LoggerFactory.getLogger(ClientApp.class);
-    private static final int WORKER_COUNT = 1;
-    private static final int BRICK_SETS_TO_SEND = 5;
+    static final String PUBLIC_BRICK_SERVICE_HOST = "localhost:8090";
+    static final long SEND_MILLIS_PER_BYTE = 0;
+    static final Logger log = LoggerFactory.getLogger(ClientApp.class);
+
+    static final int BRICK_SETS_TO_SEND = 1000;
+    static final Throughput throughput = new Throughput(1000);
+
+    static final AtomicInteger connectTimeouts = new AtomicInteger(0);
+    static final AtomicInteger readTimeouts = new AtomicInteger(0);
+    static final AtomicInteger otherIoErrors = new AtomicInteger(0);
 
     public static void main(String[] args) throws Exception {
         long start = System.currentTimeMillis();
-        log.info("Sending {} brick sets...", BRICK_SETS_TO_SEND);
+        log.info("Sending {} brick sets at {}", BRICK_SETS_TO_SEND, throughput);
         int sentCount = 0;
         BrickSetFactory factory = new BrickSetFactory();
         ExecutorService executor = Executors.newCachedThreadPool();
+
+        List<Future> futures = new ArrayList<>(BRICK_SETS_TO_SEND);
         while(sentCount < BRICK_SETS_TO_SEND) {
-            List<Future> futures = new ArrayList<>(WORKER_COUNT);
-            for(int i = 0; i < WORKER_COUNT && sentCount < BRICK_SETS_TO_SEND; i++, sentCount++) {
+            for(int i = 0; sentCount < BRICK_SETS_TO_SEND && i < throughput.batchSize; i++, sentCount++) {
                 futures.add(executor.submit(() -> sendBrickSet(factory.nextBrickSet())));
             }
 
-            futures.forEach(f -> {
-                try {
-                    f.get();
-                } catch (ExecutionException | InterruptedException e) {
-                    // never mind
-                }
-            });
+            Thread.sleep(throughput.delayMillis);
+
+            // remove completed futures
+            Iterator<Future> futureIterator = futures.iterator();
+            while(futureIterator.hasNext())
+                if(futureIterator.next().isDone())
+                    futureIterator.remove();
         }
+
+        log.info("Waiting for {} requests to complete", futures.size());
+
+        // synchronize on remaining futures
+        futures.forEach(f -> {
+            try {
+                f.get();
+            } catch (ExecutionException | InterruptedException e) {
+                // never mind
+            }
+        });
+
         long duration = System.currentTimeMillis() - start;
-        log.info("Sent {} brick sets in {} seconds", BRICK_SETS_TO_SEND, String.format("%.2f", duration / 1000f));
+        log.info("Sent {} brick sets in {} seconds.",
+                BRICK_SETS_TO_SEND, String.format("%.2f", duration / 1000f));
+        log.info("  target: {}, actual throughput: {}",
+                throughput, String.format("%.2f", BRICK_SETS_TO_SEND / (duration / 1000.0)));
+        log.info("  connectTimeouts: {}, readTimeouts: {}, otherIoErrors: {}",
+                connectTimeouts.get(), readTimeouts.get(), otherIoErrors.get());
+
         executor.shutdown();
     }
 
@@ -86,9 +113,13 @@ public class ClientApp {
                 log.info("> {}", response);
             }
         } catch (ConnectException ce) {
+            connectTimeouts.incrementAndGet();
             log.warn("Internal Service is not running: {}", ce.getMessage());
             // return try again later status code
+        } catch(SocketTimeoutException ex) {
+            readTimeouts.incrementAndGet();
         } catch(IOException ex) {
+            otherIoErrors.incrementAndGet();
             log.warn("Request failed", ex);
         } catch(InterruptedException ie) {
             log.warn("Request interrupted", ie);
@@ -115,6 +146,25 @@ public class ClientApp {
                 sb.append((char)c);
             }
             return sb.toString();
+        }
+    }
+
+    static class Throughput {
+        int requestPerSecond;
+        long delayMillis;
+        int batchSize;
+
+        Throughput(int requestPerSecond) {
+            this.requestPerSecond = requestPerSecond;
+            batchSize = 1;
+            while(requestPerSecond / batchSize > 100)
+                batchSize++;
+            delayMillis = (long)(1000 / ((float)requestPerSecond / batchSize));
+        }
+
+        @Override
+        public String toString() {
+            return "" + requestPerSecond + " / second";
         }
     }
 }

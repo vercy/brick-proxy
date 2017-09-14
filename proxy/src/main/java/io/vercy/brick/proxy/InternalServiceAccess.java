@@ -15,7 +15,7 @@ public class InternalServiceAccess {
     private static final int INTERNAL_APP_PORT = 8080;
     private static Charset UTF_8 = Charset.forName("UTF-8");
 
-    private static final Logger log = LoggerFactory.getLogger(AsyncNonBlockingServlet.class);
+    private static final Logger log = LoggerFactory.getLogger(ProxyImpl_NonBlockingServlet.class);
 
     public String sendBlocking(BrickPayload brick) {
         try {

@@ -1,9 +1,10 @@
 package io.vercy.brick.proxy;
 
-enum AnsiColor {
+/** Colors ordinals are ansi color constants */
+enum BrickColor {
     BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE;
 
-    public static AnsiColor parse(int value) {
+    public static BrickColor parse(int value) {
         switch(value) {
             case 0: return BLACK;
             case 1: return RED;

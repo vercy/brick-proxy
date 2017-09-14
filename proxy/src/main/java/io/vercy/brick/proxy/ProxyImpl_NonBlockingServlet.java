@@ -16,14 +16,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @WebServlet(asyncSupported = true)
-public class AsyncNonBlockingServlet extends HttpServlet {
+public class ProxyImpl_NonBlockingServlet extends HttpServlet {
 
-    private static final Logger log = LoggerFactory.getLogger(AsyncNonBlockingServlet.class);
+    private static final Logger log = LoggerFactory.getLogger(ProxyImpl_NonBlockingServlet.class);
     private static final ExecutorService receiver = Executors.newSingleThreadExecutor();
     private static final ExecutorService dispatcher = Executors.newSingleThreadExecutor();
     private static volatile int requestCounter = 0;
 
-    static BrickParser parser = new BrickParser();
+    static BrickReader parser = new BrickReader();
     static InternalServiceAccess internalServiceAccess = new InternalServiceAccess();
 
     @Override
@@ -50,9 +50,9 @@ public class AsyncNonBlockingServlet extends HttpServlet {
                 in.setReadListener(new ReadListener() {
                     @Override
                     public void onDataAvailable() throws IOException {
-                        while (in.available() >= BrickParser.BRICK_REQUEST_BYTE_COUNT) {
-                            BrickPayload brick = parser.read(in);
-                            if (brick == null)
+                        BrickPayload brick = new BrickPayload();
+                        while (in.available() >= BrickReader.BRICK_REQUEST_BYTE_COUNT) {
+                            if (parser.read(in, brick) == BrickReader.ReadState.INVALID_BRICK)
                                 continue;
 
                             processedBrickCount++;

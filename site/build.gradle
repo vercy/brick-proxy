@@ -1,4 +1,5 @@
 
 dependencies {
     compile 'io.undertow:undertow-core:1.4.12.Final'
+    compile 'io.undertow:undertow-servlet:1.4.12.Final'
 }

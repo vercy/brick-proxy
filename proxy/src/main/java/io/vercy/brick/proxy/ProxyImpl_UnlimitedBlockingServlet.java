@@ -20,11 +20,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @WebServlet(asyncSupported = true)
-public class AsyncBlockingServlet extends HttpServlet {
+public class ProxyImpl_UnlimitedBlockingServlet extends HttpServlet {
     private static final String INTERNAL_BRICK_SERVICE_HOST = "localhost:8080";
-    private static final Logger log = LoggerFactory.getLogger(AsyncBlockingServlet.class);
+    private static final Logger log = LoggerFactory.getLogger(ProxyImpl_UnlimitedBlockingServlet.class);
     private static final ExecutorService executor = Executors.newCachedThreadPool();
     private static volatile int requestCounter = 0;
+
+    static BrickReader parser = new BrickReader();
+    static InternalServiceAccess internalServiceAccess = new InternalServiceAccess();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -47,24 +50,12 @@ public class AsyncBlockingServlet extends HttpServlet {
             int received = 0;
             try {
                 InputStream in = asyncCtx.getRequest().getInputStream();
-                while (true) {
-                    rawColor = in.read();
-                    if (rawColor < 0)
-                        break;
-                    rawLength = in.read();
-                    if (rawLength < 0)
-                        break;
-
+                BrickPayload brick = new BrickPayload();
+                while (parser.read(in, brick) != BrickReader.ReadState.EOF) {
                     received++;
-                    AnsiColor bColor = AnsiColor.parse(rawColor - '0');
-                    int bLength = rawLength - '0';
-                    if (bColor == null || bLength <= 0) {
-                        log.warn("{} > Skipping invalid brick: {color: {}, length: {}} colorByte: {}, lengthByte: {}", String.format("%08X", requestId), bColor, bLength, rawColor, rawLength);
-                        continue;
-                    }
-                    log.debug("{} > Sending brick: {color: {}, length: {}}", String.format("%08X", requestId), bColor, bLength);
+                    log.debug("{} > Sending brick: {}", String.format("%08X", requestId), brick);
 
-                    sendBrick(requestId, bColor, bLength);
+                    internalServiceAccess.sendBlocking(brick);
                 }
 
                 asyncCtx.getResponse().getOutputStream().print("Public Brick Service received " + received + " bricks");
@@ -83,7 +74,7 @@ public class AsyncBlockingServlet extends HttpServlet {
         }
     }
 
-    private static void sendBrick(int requestId, AnsiColor color, int length) {
+    private static void sendBrick(int requestId, BrickColor color, int length) {
         HttpURLConnection cn = null;
         try {
             URL url = new URL(urlToInternalBrickSvc(color, length));
@@ -114,7 +105,7 @@ public class AsyncBlockingServlet extends HttpServlet {
         }
     }
 
-    static String urlToInternalBrickSvc(AnsiColor color, int length) {
+    static String urlToInternalBrickSvc(BrickColor color, int length) {
         return "http://" + INTERNAL_BRICK_SERVICE_HOST + "/brick?color=" + color + "&length=" + length;
     }
 

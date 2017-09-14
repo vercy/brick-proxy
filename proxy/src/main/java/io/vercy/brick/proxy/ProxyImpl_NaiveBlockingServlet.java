@@ -15,10 +15,10 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
 
-public class NaiveBlockingServlet extends HttpServlet {
+public class ProxyImpl_NaiveBlockingServlet extends HttpServlet {
     private static final String INTERNAL_BRICK_SERVICE_HOST = "localhost:8080";
 
-    private static final Logger log = LoggerFactory.getLogger(NaiveBlockingServlet.class);
+    private static final Logger log = LoggerFactory.getLogger(ProxyImpl_NaiveBlockingServlet.class);
     private static volatile int requestCounter = 0;
 
     @Override
@@ -39,7 +39,7 @@ public class NaiveBlockingServlet extends HttpServlet {
                     break;
 
                 received++;
-                AnsiColor bColor = AnsiColor.parse(rawColor - '0');
+                BrickColor bColor = BrickColor.parse(rawColor - '0');
                 int bLength = rawLength - '0';
                 if(bColor == null || bLength <= 0) {
                     log.warn("{} > Skipping invalid brick: {color: {}, length: {}} colorByte: {}, lengthByte: {}", String.format("%08X", requestId), bColor, bLength, rawColor, rawLength);
@@ -63,7 +63,7 @@ public class NaiveBlockingServlet extends HttpServlet {
         }
     }
 
-    private static void sendBrick(int requestId, AnsiColor color, int length) {
+    private static void sendBrick(int requestId, BrickColor color, int length) {
         HttpURLConnection cn = null;
         try {
             URL url = new URL(urlToInternalBrickSvc(color, length));
@@ -94,7 +94,7 @@ public class NaiveBlockingServlet extends HttpServlet {
         }
     }
 
-    static String urlToInternalBrickSvc(AnsiColor color, int length) {
+    static String urlToInternalBrickSvc(BrickColor color, int length) {
         return "http://" + INTERNAL_BRICK_SERVICE_HOST + "/brick?color=" + color + "&length=" + length;
     }
 
