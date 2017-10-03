@@ -27,7 +27,7 @@ public class ClientApp {
     static final long SEND_MILLIS_PER_BYTE = 0;
     static final Logger log = LoggerFactory.getLogger(ClientApp.class);
 
-    static final int BRICK_SETS_TO_SEND = 1000;
+    static final int BRICK_SETS_TO_SEND = 10000;
     static final Throughput throughput = new Throughput(1000);
 
     static final AtomicInteger connectTimeouts = new AtomicInteger(0);

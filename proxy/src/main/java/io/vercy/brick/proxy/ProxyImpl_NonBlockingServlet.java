@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.channels.CompletionHandler;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -56,7 +57,17 @@ public class ProxyImpl_NonBlockingServlet extends HttpServlet {
                                 continue;
 
                             processedBrickCount++;
-                            receiver.submit(() -> internalServiceAccess.sendBlocking(brick));
+                            internalServiceAccess.sendNonBlocking(brick, new CompletionHandler<String, Void>() {
+                                @Override
+                                public void completed(String result, Void attachment) {
+
+                                }
+
+                                @Override
+                                public void failed(Throwable exc, Void attachment) {
+
+                                }
+                            });
                         }
                     }
 

@@ -15,7 +15,7 @@ public class PublicApp {
                 .setContextPath("/brickset")
                 .setDeploymentName("blocking-brick-proxy.war")
                 .addServlets(
-                        Servlets.servlet("BlockingServlet", ProxyImpl_UnlimitedBlockingServlet.class)
+                        Servlets.servlet("BlockingServlet", ProxyImpl_NonBlockingServlet.class)
                                 .setAsyncSupported(true)
                                 .addInitParam("message", "Hello World")
                                 .addMapping("/*"));
